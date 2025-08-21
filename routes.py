@@ -51,7 +51,7 @@ def find_book(id: str, db: Database = Depends(get_database)):
 @router.put("/{id}", response_description="Update a book", response_model=Book)
 def update_book(id: str, book: BookUpdate = Body(...), db: Database = Depends(get_database)):
     from datetime import datetime
-    book = {k: v for k, v in book.dict().items() if v is not None}
+    book = {k: v for k, v in book.dict(exclude_unset=True).items() if v is not None}
     
     # Update the updated_at timestamp
     book["updated_at"] = datetime.now().isoformat()

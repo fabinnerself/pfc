@@ -27,13 +27,13 @@ class Book(BaseModel):
         }
 
 
-class BookUpdate(BaseModel):
-    name: Optional[str]
-    author: Optional[str]
-    price: Optional[float]
-    description: Optional[str]
-    created_at: Optional[str]
-    updated_at: Optional[str]
+class BookUpdate(Book):
+    name: Optional[str] = None
+    author: Optional[str] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         schema_extra = {
