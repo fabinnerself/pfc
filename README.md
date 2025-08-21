@@ -26,6 +26,15 @@ python -m uvicorn main:app --reload
 
 When the application starts, navigate to `http://localhost:8000/docs` and try out the `book` endpoints.
 
+## Deploying to Vercel
+
+This application can be deployed to Vercel. To do so:
+
+1. Create a new project on Vercel and connect it to your GitHub repository
+2. In the Vercel project settings, add the following environment variables:
+   - `ATLAS_URI`: Your MongoDB Atlas connection string
+   - `DB_NAME`: The name of your database (e.g., `ultimate_library`)
+3. Vercel will automatically detect the `vercel.json` file and use it for deployment
 ## Running the tests
 
 Install `pytest`:
