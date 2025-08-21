@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Body, Request, Response, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Response, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from typing import List
+from pymongo.database import Database
 
 from models import Book, BookUpdate
+from main import get_db
 
 router = APIRouter()
 
 @router.post("/", response_description="Create a new book", status_code=status.HTTP_201_CREATED, response_model=Book)
-def create_book(request: Request, book: Book = Body(...)):
+def create_book(book: Book = Body(...), db: Database = Depends(get_db)):
     from datetime import datetime
     # Ensure timestamps are set
     if not book.created_at:
@@ -16,8 +18,8 @@ def create_book(request: Request, book: Book = Body(...)):
         book.updated_at = datetime.now().isoformat()
     
     book = jsonable_encoder(book)
-    new_book = request.app.database["books"].insert_one(book)
-    created_book = request.app.database["books"].find_one(
+    new_book = db["books"].insert_one(book)
+    created_book = db["books"].find_one(
         {"_id": book["_id"]}
     )
 
@@ -25,8 +27,8 @@ def create_book(request: Request, book: Book = Body(...)):
 
 
 @router.get("/", response_description="List all books", response_model=List[Book])
-def list_books(request: Request):
-    books = list(request.app.database["books"].find(limit=100))
+def list_books(db: Database = Depends(get_db)):
+    books = list(db["books"].find(limit=100))
     # Convertir los objetos de MongoDB a diccionarios serializables
     for book in books:
         book["_id"] = str(book["_id"])
@@ -36,8 +38,8 @@ def list_books(request: Request):
 
 
 @router.get("/{id}", response_description="Get a single book by id", response_model=Book)
-def find_book(id: str, request: Request):
-    if (book := request.app.database["books"].find_one({"_id": id})) is not None:
+def find_book(id: str, db: Database = Depends(get_db)):
+    if (book := db["books"].find_one({"_id": id})) is not None:
         # Convertir los objetos datetime a cadenas antes de devolver el libro
         book["created_at"] = str(book["created_at"])
         book["updated_at"] = str(book["updated_at"])
@@ -47,7 +49,7 @@ def find_book(id: str, request: Request):
 
 
 @router.put("/{id}", response_description="Update a book", response_model=Book)
-def update_book(id: str, request: Request, book: BookUpdate = Body(...)):
+def update_book(id: str, book: BookUpdate = Body(...), db: Database = Depends(get_db)):
     from datetime import datetime
     book = {k: v for k, v in book.dict().items() if v is not None}
     
@@ -55,7 +57,7 @@ def update_book(id: str, request: Request, book: BookUpdate = Body(...)):
     book["updated_at"] = datetime.now().isoformat()
 
     if len(book) >= 1:
-        update_result = request.app.database["books"].update_one(
+        update_result = db["books"].update_one(
             {"_id": id}, {"$set": book}
         )
 
@@ -63,7 +65,7 @@ def update_book(id: str, request: Request, book: BookUpdate = Body(...)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Book with ID {id} not found")
 
     if (
-        existing_book := request.app.database["books"].find_one({"_id": id})
+        existing_book := db["books"].find_one({"_id": id})
     ) is not None:
         return existing_book
 
@@ -71,8 +73,8 @@ def update_book(id: str, request: Request, book: BookUpdate = Body(...)):
 
 
 @router.delete("/{id}", response_description="Delete a book")
-def delete_book(id: str, request: Request, response: Response):
-    delete_result = request.app.database["books"].delete_one({"_id": id})
+def delete_book(id: str, response: Response, db: Database = Depends(get_db)):
+    delete_result = db["books"].delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
         response.status_code = status.HTTP_204_NO_CONTENT
