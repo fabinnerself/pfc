@@ -1,0 +1,7 @@
+# Ignore environment files
+.env
+
+# But do not ignore .env-example
+!.env-example
+
+__pycache__/
