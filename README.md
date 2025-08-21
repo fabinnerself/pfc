@@ -35,6 +35,7 @@ This application can be deployed to Vercel. To do so:
    - `ATLAS_URI`: Your MongoDB Atlas connection string
    - `DB_NAME`: The name of your database (e.g., `ultimate_library`)
 3. Vercel will automatically detect the `vercel.json` file and use it for deployment
+4. The application uses Python 3.12 and updated dependencies for compatibility
 ## Running the tests
 
 Install `pytest`:
