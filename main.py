@@ -1,41 +1,8 @@
 from fastapi import FastAPI
-import os
-from dotenv import load_dotenv
-from pymongo import MongoClient
 from routes import router as book_router
-
-# Load environment variables from .env file if it exists (for local development)
-load_dotenv()
+from database import get_database, close_database_connection
 
 app = FastAPI()
-
-# Global variable to store the database client
-mongodb_client = None
-database = None
-
-def get_database():
-    """Get database connection, creating it if necessary"""
-    global mongodb_client, database
-    
-    if mongodb_client is None or database is None:
-        atlas_uri = os.getenv("ATLAS_URI")
-        db_name = os.getenv("DB_NAME")
-        
-        if not atlas_uri:
-            raise ValueError("ATLAS_URI environment variable is not set")
-        
-        if not db_name:
-            raise ValueError("DB_NAME environment variable is not set")
-        
-        try:
-            mongodb_client = MongoClient(atlas_uri)
-            # Test the connection
-            mongodb_client.admin.command('ping')
-            database = mongodb_client[db_name]
-        except Exception as e:
-            raise RuntimeError(f"Failed to connect to MongoDB: {str(e)}")
-    
-    return database
 
 @app.on_event("startup")
 def startup_db_client():
@@ -45,13 +12,6 @@ def startup_db_client():
 @app.on_event("shutdown")
 def shutdown_db_client():
     """Close database connection on shutdown"""
-    global mongodb_client
-    if mongodb_client:
-        mongodb_client.close()
-        mongodb_client = None
-
-# Dependency to get database connection
-def get_db():
-    return get_database()
+    close_database_connection()
 
 app.include_router(book_router, tags=["books"], prefix="/book")

@@ -4,12 +4,12 @@ from typing import List
 from pymongo.database import Database
 
 from models import Book, BookUpdate
-from main import get_db
+from database import get_database
 
 router = APIRouter()
 
 @router.post("/", response_description="Create a new book", status_code=status.HTTP_201_CREATED, response_model=Book)
-def create_book(book: Book = Body(...), db: Database = Depends(get_db)):
+def create_book(book: Book = Body(...), db: Database = Depends(get_database)):
     from datetime import datetime
     # Ensure timestamps are set
     if not book.created_at:
@@ -27,7 +27,7 @@ def create_book(book: Book = Body(...), db: Database = Depends(get_db)):
 
 
 @router.get("/", response_description="List all books", response_model=List[Book])
-def list_books(db: Database = Depends(get_db)):
+def list_books(db: Database = Depends(get_database)):
     books = list(db["books"].find(limit=100))
     # Convertir los objetos de MongoDB a diccionarios serializables
     for book in books:
@@ -38,7 +38,7 @@ def list_books(db: Database = Depends(get_db)):
 
 
 @router.get("/{id}", response_description="Get a single book by id", response_model=Book)
-def find_book(id: str, db: Database = Depends(get_db)):
+def find_book(id: str, db: Database = Depends(get_database)):
     if (book := db["books"].find_one({"_id": id})) is not None:
         # Convertir los objetos datetime a cadenas antes de devolver el libro
         book["created_at"] = str(book["created_at"])
@@ -49,7 +49,7 @@ def find_book(id: str, db: Database = Depends(get_db)):
 
 
 @router.put("/{id}", response_description="Update a book", response_model=Book)
-def update_book(id: str, book: BookUpdate = Body(...), db: Database = Depends(get_db)):
+def update_book(id: str, book: BookUpdate = Body(...), db: Database = Depends(get_database)):
     from datetime import datetime
     book = {k: v for k, v in book.dict().items() if v is not None}
     
@@ -73,7 +73,7 @@ def update_book(id: str, book: BookUpdate = Body(...), db: Database = Depends(ge
 
 
 @router.delete("/{id}", response_description="Delete a book")
-def delete_book(id: str, response: Response, db: Database = Depends(get_db)):
+def delete_book(id: str, response: Response, db: Database = Depends(get_database)):
     delete_result = db["books"].delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
