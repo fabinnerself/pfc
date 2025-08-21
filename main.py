@@ -1,17 +1,14 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from routes import router as book_router
 from database import get_database, close_database_connection
 
-app = FastAPI()
-
-@app.on_event("startup")
-def startup_db_client():
-    """Initialize database connection on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     get_database()
-
-@app.on_event("shutdown")
-def shutdown_db_client():
-    """Close database connection on shutdown"""
+    yield
     close_database_connection()
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(book_router, tags=["books"], prefix="/book")
